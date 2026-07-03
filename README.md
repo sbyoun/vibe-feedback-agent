@@ -19,28 +19,35 @@
 리뷰 작성 규칙: 오너의 셀프노트에 직접 반응하고, 데모/repo를 **실제 방문한 관찰**을 근거로 인용하고,
 확인 못 한 것은 가설로 표기한다. 오너가 지적을 반영하면 확인 코멘트를 남긴다.
 
-## 구조 — 3패스: 생성 ↛ 심사 ↛ 게시
+## 구조 — 프로젝트별 독립 컨텍스트 4패스
 
-"완료는 주장이지 증명이 아니다" — 초안을 쓴 에이전트가 게시를 결정하지 않는다.
-생성과 심사는 **컨텍스트가 분리된 별도 프로세스**다 (자기 심사 통과 편향 차단, loop-engine의 verifier 분리 원칙).
+두 가지 분리 원칙:
+1. **생성 ↛ 심사** — "완료는 주장이지 증명이 아니다." 초안을 쓴 에이전트가 게시를 결정하지 않는다 (자기 심사 편향 차단).
+2. **프로젝트 ↛ 프로젝트** — LLM 세션은 프로젝트 1개만 담당한다. 피드백 히스토리가 길어져도
+   컨텍스트가 비대해지지 않고, 프로젝트 간 관점 오염이 없다.
+
+기계적인 일(열거·변경감지·게시·상태)은 전부 결정론적 코드가 하고, LLM은 판단(관찰·작성·심사)에만 쓴다.
+**state.json과 token은 LLM이 아예 만지지 않는다.** 변경이 없는 날은 LLM 호출 0회.
 
 ```
 run.sh
- ├─ Pass 1  claude -p PROMPT.md    게이트·관찰·초안 → work/drafts.json  (vibe 쓰기 0, 토큰 접근 0)
- ├─ Pass 2  claude -p VERIFIER.md  독립 심사: 근거 스팟체크·중복·실질성 → work/verdicts.json (기본값 FAIL)
- └─ Pass 3  post_drafts.py         PASS만 feedback_create — 토큰은 이 결정론적 스크립트만 접근
+ ├─ Pass 0  check_changes.py      열거 + 표면/변경 게이트(코드) → 변경분만 work/queue/<id>.json
+ ├─ Pass 1  claude -p PROMPT.md   × 프로젝트마다 새 세션 — 관찰·초안 → work/drafts/<id>.json
+ ├─ Pass 2  claude -p VERIFIER.md × 초안마다 새 세션 — 독립 심사 → work/verdicts/<id>.json (기본값 FAIL)
+ └─ Pass 3  post_drafts.py        PASS만 feedback_create — 토큰은 이 스크립트만 접근
 ```
 
 ```
-PROMPT.md      # Pass 1 규약: 4중 게이트 + 관찰 + 초안 작성 (핵심 파일)
-VERIFIER.md    # Pass 2 규약: 7개 기준 심사, 의심스러우면 FAIL
-post_drafts.py # Pass 3: 결정론적 게시 + 상태 확정 + 일일 요약
-run.sh         # 크론 러너: 3패스 오케스트레이션, flock 중복 방지
-seed_state.py  # 최초 1회 상태 기준선 시딩
-state.json     # (gitignore) 프로젝트별 마지막 관찰 기록 — 변경 감지의 기준
-token          # (gitignore) 봇 계정 MCP Bearer 토큰
-work/          # (gitignore) 당일 초안/판정 파일
-logs/          # (gitignore) 실행 로그 + 일일 요약
+check_changes.py # Pass 0: 열거·표면 게이트·변경 감지·큐 구성 (결정론적)
+PROMPT.md        # Pass 1 규약: 프로젝트 1개 관찰 + 오너 댓글 반응 + 초안 (핵심 파일)
+VERIFIER.md      # Pass 2 규약: 초안 1개 심사, 7개 기준, 의심스러우면 FAIL
+post_drafts.py   # Pass 3: 결정론적 게시 + 상태 확정 + 일일 요약
+run.sh           # 크론 러너: 4패스 오케스트레이션, flock, 세션별 timeout
+seed_state.py    # 최초 1회 상태 기준선 시딩
+state.json       # (gitignore) 프로젝트별 마지막 관찰 기록 — 변경 감지의 기준
+token            # (gitignore) 봇 계정 MCP Bearer 토큰
+work/            # (gitignore) 당일 큐/초안/판정 파일
+logs/            # (gitignore) 실행 로그 + 일일 요약
 ```
 
 ## 실행
