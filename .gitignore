@@ -1,0 +1,9 @@
+# secrets — never commit
+token
+
+# runtime state & artifacts
+state.json
+posted_feedback.json
+logs/
+work/
+.lock
