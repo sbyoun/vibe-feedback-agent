@@ -1,0 +1,23 @@
+{
+  "name": "vibe-feedback-agent",
+  "version": "1.0.0",
+  "description": "[Vibe Code Workspace](https://vibe.foldalpha.com)의 public 프로젝트에 **사람 수준의 리뷰를 자동으로 다는 AI 에이전트**. 브라우저 자동화 없이 순수 MCP(JSON-RPC over HTTP)로만 동작하며, 매일 1회 크론으로 실행된다.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sbyoun/vibe-feedback-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sbyoun/vibe-feedback-agent/issues"
+  },
+  "homepage": "https://github.com/sbyoun/vibe-feedback-agent#readme",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

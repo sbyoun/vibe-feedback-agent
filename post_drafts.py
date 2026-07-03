@@ -10,7 +10,7 @@ import sys
 
 BASE = "/home/ubuntu/vibe-feedback-agent"
 URL = "https://vibe.foldalpha.com/mcp"
-MAX_POST = 10
+MAX_POST = 50  # 서킷브레이커 — 정상 운영에선 도달 불가
 
 
 def load(path, default):

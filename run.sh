@@ -23,25 +23,27 @@ if [ "$QUEUED" -eq 0 ]; then
   exit 0
 fi
 
-echo "=== Pass 1: 생성 (${QUEUED}개, 프로젝트별 독립 세션) ===" >> "$LOG"
+echo "=== Pass 1: 생성 (${QUEUED}개, 프로젝트별 독립 세션 + 브라우저 탐색) ===" >> "$LOG"
 for f in "$BASE"/work/queue/*.json; do
   echo "--- gen: $(basename "$f") $(date -Iseconds)" >> "$LOG"
-  timeout 1200 "$CLAUDE" -p "$(cat "$BASE/PROMPT.md")
+  timeout 1800 "$CLAUDE" -p "$(cat "$BASE/PROMPT.md")
 
 입력 파일: $f" \
-    --allowedTools "Bash" "WebFetch" "WebSearch" "Read" "Write" "Glob" "Grep" \
+    --mcp-config "$BASE/mcp.json" \
+    --allowedTools "Bash" "WebFetch" "WebSearch" "Read" "Write" "Glob" "Grep" "mcp__playwright" \
     >> "$LOG" 2>&1 || echo "gen 실패/타임아웃: $(basename "$f")" >> "$LOG"
 done
 
-echo "=== Pass 2: 심사 (초안별 독립 세션) ===" >> "$LOG"
+echo "=== Pass 2: 심사 (초안별 독립 세션 + 브라우저 스팟체크) ===" >> "$LOG"
 for f in "$BASE"/work/drafts/*.json; do
   [ -e "$f" ] || continue
   python3 -c "import json,sys; sys.exit(0 if not json.load(open('$f')).get('skip') else 1)" || continue
   echo "--- verify: $(basename "$f") $(date -Iseconds)" >> "$LOG"
-  timeout 900 "$CLAUDE" -p "$(cat "$BASE/VERIFIER.md")
+  timeout 1200 "$CLAUDE" -p "$(cat "$BASE/VERIFIER.md")
 
 초안 파일: $f" \
-    --allowedTools "Bash" "WebFetch" "Read" "Write" "Glob" "Grep" \
+    --mcp-config "$BASE/mcp.json" \
+    --allowedTools "Bash" "WebFetch" "Read" "Write" "Glob" "Grep" "mcp__playwright" \
     >> "$LOG" 2>&1 || echo "verify 실패/타임아웃: $(basename "$f")" >> "$LOG"
 done
 
