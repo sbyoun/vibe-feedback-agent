@@ -7,13 +7,13 @@
 - 봇 토큰: `/home/ubuntu/vibe-feedback-agent/token` (Bearer)
 - 상태 파일: `/home/ubuntu/vibe-feedback-agent/state.json` — 프로젝트별 마지막 관찰 기록
 - MCP 엔드포인트: `POST https://vibe.foldalpha.com/mcp` (JSON-RPC, `tools/call`)
+  - `vibe.public_projects_list` {limit≤100, offset, sort:"updated"} — 인증 불필요, public 프로젝트 열거 (offset 페이지네이션: 반환 수가 limit와 같으면 다음 페이지 조회)
   - `vibe.public_projects_get` {handle, slug} — 인증 불필요, 글+댓글 반환
   - `vibe.feedback_create` {projectId, body, feedbackType, rating, parentFeedbackId?} — 토큰 필요
-- public 프로젝트 열거: `curl -sL https://vibe.foldalpha.com/discover | grep -oE '/p/[^"'"'"' #]+'` (스크레이핑, 중복 제거)
 
 ## 절차 (프로젝트마다)
 
-1. **열거**: /discover에서 handle/slug 목록 수집. state.json에 없는 프로젝트는 "신규".
+1. **열거**: `vibe.public_projects_list`(sort=updated)로 전체 public 프로젝트 수집. state.json에 없는 프로젝트는 "신규". (봇 자신이 소유한 프로젝트는 리뷰하지 않는다)
 2. **조회**: `public_projects_get`으로 글 본문, demoUrl, repoUrl, updatedAt, 댓글 전체(작성자·kind 포함)를 얻는다.
 3. **표면 규칙 (게이트 1)**: demoUrl도 repoUrl도 없으면 → SKIP (state에 skipReason 기록). 관찰 불가능한 프로젝트에는 리뷰하지 않는다.
 4. **변경 감지 (게이트 2)** — state.json의 마지막 기록과 비교해 아래 중 하나라도 참이어야 진행:
