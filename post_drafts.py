@@ -8,7 +8,7 @@ import sys
 
 BASE = "/home/ubuntu/vibe-feedback-agent"
 URL = "https://vibe.foldalpha.com/mcp"
-MAX_POST = 5
+MAX_POST = 10
 
 def load(path, default):
     try:
