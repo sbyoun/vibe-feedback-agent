@@ -1,5 +1,7 @@
 # secrets — never commit
 token
+.showcase_token
+__pycache__/
 
 # runtime state & artifacts
 state.json
