@@ -7,3 +7,7 @@ posted_feedback.json
 logs/
 work/
 .lock
+
+# playwright
+node_modules/
+package-lock.json

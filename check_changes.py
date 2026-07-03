@@ -11,7 +11,7 @@ import sys
 BASE = "/home/ubuntu/vibe-feedback-agent"
 URL = "https://vibe.foldalpha.com/mcp"
 BOT_HANDLE = "ai-reviewer"
-MAX_QUEUE = 10
+MAX_QUEUE = 50  # 서킷브레이커 — 정상 운영에선 도달 불가. 변경감지 플래핑 버그 시 폭주 차단용
 
 now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 today = datetime.date.today().strftime("%Y%m%d")
