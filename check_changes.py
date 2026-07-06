@@ -101,7 +101,10 @@ for e in entries:
     if sha and not is_new and sha != rec.get("repoShaSeen"):
         signals.append("repo-commit")
     dhash = demo_hash(p.get("demoUrl")) if p.get("demoUrl") else None
-    if dhash and not is_new and dhash != rec.get("demoHashSeen"):
+    demo_changed = bool(dhash) and not is_new and dhash != rec.get("demoHashSeen")
+    # 플래핑 학습: 해시가 매 실행 바뀌는 동적 페이지는 3회 연속 후 노이즈로 강등
+    rec["demoFlapCount"] = (rec.get("demoFlapCount", 0) + 1) if demo_changed else 0
+    if demo_changed and rec["demoFlapCount"] < 3:
         signals.append("demo-changed(weak)")
 
     # 관찰 마커는 확인 시점 기준으로 갱신 (같은 변경으로 무한 재시도 방지)
