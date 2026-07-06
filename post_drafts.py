@@ -21,6 +21,32 @@ def load(path, default):
         return default
 
 
+def refresh_updated_at(rec):
+    """게시 직후 프로젝트 updatedAt을 다시 읽어 기준선 갱신 — 봇 자신의 게시가
+    다음 실행에서 post-updated 신호로 잡히는 자기유발 루프를 차단한다."""
+    handle, slug = rec.get("handle"), rec.get("slug")
+    if not handle or not slug:
+        return
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                       "params": {"name": "vibe.public_projects_get",
+                                  "arguments": {"handle": handle, "slug": slug}}},
+                      ensure_ascii=False)
+    p = subprocess.run(["curl", "-sS", "--max-time", "20", "-X", "POST", URL,
+                        "-H", "Content-Type: application/json",
+                        "-H", "Accept: application/json, text/event-stream",
+                        "--data-binary", "@-"], input=body.encode(), capture_output=True)
+    try:
+        sc = json.loads(p.stdout.decode())["result"]["structuredContent"]
+        proj = sc.get("project", sc)
+        comments = sc.get("feedback") or sc.get("comments") or []
+        if proj.get("updatedAt"):
+            rec["updatedAtSeen"] = proj["updatedAt"]
+        if comments:
+            rec["commentCountSeen"] = len(comments)
+    except Exception:
+        pass  # 실패해도 치명적이지 않음 — 다음 실행의 가치 게이트가 거른다
+
+
 state = load(f"{BASE}/state.json", {"projects": {}})
 now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 today = datetime.date.today().strftime("%Y%m%d")
@@ -82,6 +108,7 @@ for df in draft_files:
         rec["lastReviewedAt"] = now
         rec.setdefault("ownCommentIds", []).append(fb.get("id"))
         rec["commentCountSeen"] = rec.get("commentCountSeen", 0) + 1
+        refresh_updated_at(rec)
     except Exception as e:
         errors.append((d.get("slug", pid), str(e)))
         rec["lastAction"] = "error:post"
